@@ -4,7 +4,7 @@
 // the number of deadlocks it had to recover from, and prints this to screen when it exits.
 
 
-#define _POSIX_C_SOURCE 199309L // Needed to expose the CLOCK_REALTIME definition
+//#define _POSIX_C_SOURCE 199309L // Needed to expose the CLOCK_REALTIME definition
 #include <time.h> // For the timespec struct. Used in sem_timedwait.
 #include <semaphore.h>
 #include <stdio.h>
@@ -51,7 +51,7 @@ return ret;
 
 
 void process(sem_t * semS, sem_t *semK, int index){
-
+struct timespec sleepyTime = {.tv_nsec = 100000, .tv_sec = 0};
 	
 // sem_open both semaphores if necessary
 	int deadlocks = 0;
@@ -68,14 +68,14 @@ void process(sem_t * semS, sem_t *semK, int index){
 	}
 	// Just sleep for a second because otherwise the 
 	// incoming thread overwrites the outgoing threads report. (sometimes).
-	sleep(1);
+	nanosleep(&sleepyTime, NULL);
 	//	   prompt "enter < 80 characters or q to quit: "
 	printf("Enter < 80 characters or q to quit: ");
 
   //	   read keyboard
 	if(fgets(input, 80, stdin) != NULL){
 	  // echo what was typed
-		printf("-> %s\n\n", input);
+		printf("-> %s\n", input);
 	}else{
 		printf("\n");
 		input[0] = ' ';
@@ -87,7 +87,7 @@ void process(sem_t * semS, sem_t *semK, int index){
 	returnSemaphore(semK);
 	}
 	// 	 prompt "This process had " + count + " deadlocks "
-	printf("\n** Process # %d, had %d deadlocks **\n\n", index, deadlocks);
+	printf("** Process # %d, had %d deadlocks **\n", index, deadlocks);
 
 	// exit
 	closeSemaphores(semS, semK);
@@ -161,7 +161,7 @@ sem_t *openSemaphore(sem_t *semaphore, char *semaphoreName){
 	
 	semaphore = sem_open(semaphoreName, O_CREAT, 0644, 1);
 	if(semaphore == SEM_FAILED){
-		perror("Failed to open semaphore");
+		perror("Failed to open semaphore\n");
 		exit(1);
 	}
 	return(semaphore);
@@ -173,7 +173,7 @@ void returnSemaphore(sem_t *sema){
 	error += sem_post(sema);
 
 	if(error){
-		perror("Unable to return semaphore from process");
+		perror("Unable to return semaphore from process\n");
 		exit(1);
 	}
 
@@ -185,7 +185,7 @@ void closeSemaphores(sem_t *semS, sem_t *semK){
 	error += sem_close(semS);
 	error += sem_close(semK);
 	if(error){
-		perror("Unable to close semaphore");
+		perror("Unable to close semaphore\n");
 		exit(1);
 	}
 }
